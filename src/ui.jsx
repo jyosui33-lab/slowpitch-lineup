@@ -3,7 +3,7 @@
 
 import { forwardRef } from "react";
 import { ChevronUp, ChevronDown, ChevronLeft } from "lucide-react";
-import { COLORS, initials } from "./constants";
+import { COLORS } from "./constants";
 
 export const TopHeader = forwardRef(function TopHeader({ title, subtitle, onBack, right }, ref) {
   return (
@@ -60,38 +60,22 @@ export function PlayerChip({ player, picked, onClick, label, isStartingEP, disab
       onClick={onClick}
       disabled={disabled}
       style={{
-        flexShrink: 0,
+        width: "100%",
         display: "flex",
         alignItems: "center",
         gap: 6,
         background: picked ? COLORS.gold : isStartingEP ? COLORS.epBluePale : COLORS.card,
         border: `1px solid ${picked ? COLORS.goldDeep : isStartingEP ? COLORS.epBlueBorder : COLORS.border}`,
         borderRadius: 999,
-        padding: "6px 12px 6px 6px",
+        padding: "6px 12px",
         boxShadow: picked ? "0 0 0 3px rgba(214,169,58,0.35)" : "none",
         opacity: disabled ? 0.55 : 1,
       }}
     >
       {label && (
-        <span style={{ fontSize: 11, fontWeight: 800, color: COLORS.muted, marginLeft: 4 }}>{label}</span>
+        <span style={{ fontSize: 11, fontWeight: 800, color: COLORS.muted, flexShrink: 0 }}>{label}</span>
       )}
-      <span
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          background: isStartingEP ? COLORS.epBlue : COLORS.ink,
-          color: COLORS.chalk,
-          fontSize: 10,
-          fontWeight: 800,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {initials(player.name)}
-      </span>
-      <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "left" }}>
         {player.name}
         <span style={{ color: picked ? COLORS.ink : COLORS.muted, fontWeight: 700 }}> #{player.jerseyNumber || "–"}</span>
       </span>

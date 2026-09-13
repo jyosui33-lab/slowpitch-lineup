@@ -30,7 +30,7 @@ const PrintableLineupCard = forwardRef(function PrintableLineupCard({ game, play
 
   const hasPlaytimeData = completedInnings.length > 0;
   const { participation, completedInningsSorted } = hasPlaytimeData
-    ? computeParticipation({ players, battingOrder, battingSlots, fieldingByInning, completedInnings })
+    ? computeParticipation({ players, fieldingByInning, completedInnings })
     : { participation: {}, completedInningsSorted: [] };
   const playersInLineupOrder = orderPlayersByStartingLineup(players, battingSlots);
 
@@ -124,23 +124,20 @@ const PrintableLineupCard = forwardRef(function PrintableLineupCard({ game, play
             <thead>
               <tr>
                 <th style={th}>Player</th>
-                <th style={{ ...th, textAlign: "right" }}>Batted</th>
                 <th style={{ ...th, textAlign: "right" }}>Fielded</th>
                 <th style={{ ...th, textAlign: "right" }}>Sat out</th>
               </tr>
             </thead>
             <tbody>
               {playersInLineupOrder.map((p) => {
-                const stats = participation[p.id] || { battedInnings: new Set(), fieldedInnings: new Set() };
-                const batted = stats.battedInnings.size;
+                const stats = participation[p.id] || { fieldedInnings: new Set() };
                 const fielded = stats.fieldedInnings.size;
-                const satOut = Math.max(0, completedInningsSorted.length - batted);
+                const satOut = Math.max(0, completedInningsSorted.length - fielded);
                 return (
                   <tr key={p.id}>
                     <td style={td}>
                       {p.name} #{p.jerseyNumber || "–"}
                     </td>
-                    <td style={{ ...td, textAlign: "right" }}>{batted}</td>
                     <td style={{ ...td, textAlign: "right" }}>{fielded}</td>
                     <td style={{ ...td, textAlign: "right" }}>{satOut}</td>
                   </tr>

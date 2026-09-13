@@ -6,12 +6,23 @@
 // rather than this component mutating `players` directly for deletes.
 
 import { useState, Fragment } from "react";
-import { Plus, Trash2, Pencil, Check } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, ClipboardList } from "lucide-react";
 import { COLORS, POSITIONS, uid, initials } from "./constants";
 import { CollapsibleCard } from "./ui";
+import RegistrationManagement from "./RegistrationManagement";
 
-export default function RosterCard({ players, setPlayers, onDeletePlayer, defaultOpen = false, teamName }) {
+export default function RosterCard({
+  players,
+  setPlayers,
+  onDeletePlayer,
+  defaultOpen = false,
+  teamName,
+  leagueName,
+  lunchboxUnitPrice,
+  setLunchboxUnitPrice,
+}) {
   const [rosterOpen, setRosterOpen] = useState(defaultOpen);
+  const [registrationOpen, setRegistrationOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formName, setFormName] = useState("");
@@ -160,11 +171,45 @@ export default function RosterCard({ players, setPlayers, onDeletePlayer, defaul
   return (
     <section className="lb-page-inner" style={{ padding: "12px 16px 4px" }}>
       <CollapsibleCard
-        title={teamName?.trim() ? `${teamName.trim()} roster` : "Roster"}
+        title={teamName?.trim() ? `${teamName.trim()} Roster` : "Roster"}
         subtitle={`${players.length} player${players.length === 1 ? "" : "s"}`}
         open={rosterOpen}
         onToggle={() => setRosterOpen((v) => !v)}
       >
+        <button
+          type="button"
+          className="lb-btn"
+          onClick={() => setRegistrationOpen((v) => !v)}
+          style={{
+            width: "100%",
+            background: "transparent",
+            color: COLORS.turf,
+            border: `1px solid ${COLORS.turf}`,
+            borderRadius: 10,
+            padding: "10px 0",
+            fontSize: 14,
+            fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            marginBottom: 10,
+          }}
+        >
+          <ClipboardList size={16} /> Registration Management
+        </button>
+
+        {registrationOpen && (
+          <RegistrationManagement
+            players={players}
+            setPlayers={setPlayers}
+            leagueName={leagueName}
+            teamName={teamName}
+            lunchboxUnitPrice={lunchboxUnitPrice}
+            setLunchboxUnitPrice={setLunchboxUnitPrice}
+          />
+        )}
+
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
           {players.length === 0 && (
             <div style={{ fontSize: 13, color: COLORS.muted }}>No players yet — add your first one below.</div>

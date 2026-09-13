@@ -47,7 +47,7 @@ export default function SeasonStatsCard({ statLines, players }) {
   return (
     <section className="lb-page-inner" style={{ padding: "12px 16px 4px" }}>
       <CollapsibleCard
-        title="Season hitting stats"
+        title="Season Hitting Stats"
         subtitle={statLines.length > 0 ? `${new Set(statLines.map((l) => l.gameId)).size} games logged` : undefined}
         open={open}
         onToggle={() => setOpen((v) => !v)}

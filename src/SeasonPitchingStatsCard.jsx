@@ -42,7 +42,7 @@ export default function SeasonPitchingStatsCard({ games, players }) {
   return (
     <section className="lb-page-inner" style={{ padding: "12px 16px 4px" }}>
       <CollapsibleCard
-        title="Season pitching stats"
+        title="Season Pitching Stats"
         subtitle={rows.length > 0 ? `${rows.length} pitcher${rows.length === 1 ? "" : "s"}` : undefined}
         open={open}
         onToggle={() => setOpen((v) => !v)}

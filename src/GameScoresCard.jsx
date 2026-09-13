@@ -102,7 +102,7 @@ export default function GameScoresCard({ game, setGame, teamName }) {
   return (
     <section className="lb-page-inner" style={{ padding: "12px 16px 4px" }}>
       <CollapsibleCard
-        title="Game scores"
+        title="Game Scores"
         subtitle={summary.hasScores ? `${summary.us} – ${summary.them}` : undefined}
         open={open}
         onToggle={() => setOpen((v) => !v)}

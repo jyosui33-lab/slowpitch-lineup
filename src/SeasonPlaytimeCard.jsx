@@ -35,7 +35,7 @@ export default function SeasonPlaytimeCard({ games, players }) {
   return (
     <section className="lb-page-inner" style={{ padding: "12px 16px 4px" }}>
       <CollapsibleCard
-        title="Season playtime report"
+        title="Season Playtime Report"
         subtitle={gamesWithData > 0 ? `${totalInningsCompleted} inning${totalInningsCompleted === 1 ? "" : "s"} across ${gamesWithData} game${gamesWithData === 1 ? "" : "s"}` : undefined}
         open={open}
         onToggle={() => setOpen((v) => !v)}
@@ -56,7 +56,6 @@ export default function SeasonPlaytimeCard({ games, players }) {
                   </th>
                   {[
                     { key: "gamesPlayed", label: "GP" },
-                    { key: "battedInnings", label: "Batted" },
                     { key: "fieldedInnings", label: "Fielded" },
                     { key: "satOutInnings", label: "Sat out" },
                   ].map((col) => (
@@ -94,7 +93,6 @@ export default function SeasonPlaytimeCard({ games, players }) {
                           {p.name} <span style={{ color: COLORS.muted, fontWeight: 700 }}>#{p.jerseyNumber || "–"}</span>
                         </td>
                         <td style={{ padding: "6px 4px", textAlign: "right" }}>{r.gamesPlayed}</td>
-                        <td style={{ padding: "6px 4px", textAlign: "right" }}>{r.battedInnings}</td>
                         <td style={{ padding: "6px 4px", textAlign: "right" }}>{r.fieldedInnings}</td>
                         <td style={{ padding: "6px 4px", textAlign: "right", color: r.satOutInnings > 0 ? COLORS.danger : COLORS.muted }}>
                           {r.satOutInnings}
@@ -102,7 +100,7 @@ export default function SeasonPlaytimeCard({ games, players }) {
                       </tr>
                       {expanded && (
                         <tr>
-                          <td colSpan={5} style={{ padding: "4px 4px 12px", background: COLORS.chalk }}>
+                          <td colSpan={4} style={{ padding: "4px 4px 12px", background: COLORS.chalk }}>
                             {r.games.length === 0 ? (
                               <div style={{ fontSize: 12, color: COLORS.muted, padding: "6px 4px" }}>No per-game log yet.</div>
                             ) : (
@@ -111,8 +109,8 @@ export default function SeasonPlaytimeCard({ games, players }) {
                                   <tr>
                                     <th style={{ textAlign: "left", padding: "4px", color: COLORS.muted }}>Game</th>
                                     <th style={{ textAlign: "right", padding: "4px", color: COLORS.muted }}>Innings</th>
-                                    <th style={{ textAlign: "right", padding: "4px", color: COLORS.muted }}>Batted</th>
                                     <th style={{ textAlign: "right", padding: "4px", color: COLORS.muted }}>Fielded</th>
+                                    <th style={{ textAlign: "right", padding: "4px", color: COLORS.muted }}>Sat out</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -122,8 +120,8 @@ export default function SeasonPlaytimeCard({ games, players }) {
                                         {g.opponent?.trim() ? `vs. ${g.opponent}` : "—"} {g.date && <span style={{ color: COLORS.muted }}>({g.date})</span>}
                                       </td>
                                       <td style={{ padding: "4px", textAlign: "right" }}>{g.innings}</td>
-                                      <td style={{ padding: "4px", textAlign: "right" }}>{g.batted}</td>
                                       <td style={{ padding: "4px", textAlign: "right" }}>{g.fielded}</td>
+                                      <td style={{ padding: "4px", textAlign: "right" }}>{g.satOut}</td>
                                     </tr>
                                   ))}
                                 </tbody>

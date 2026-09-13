@@ -34,7 +34,7 @@ import PrintableLineupCard from "./PrintableLineupCard";
 import StartingLineupCard from "./StartingLineupCard";
 import { downloadLineupPdf, downloadCardPdf } from "./print";
 
-export default function GameWorkspace({ game, setGame, players, setPlayers, deletePlayer, statLines, setStatLines, leagueName, teamName, onBack }) {
+export default function GameWorkspace({ game, setGame, players, setPlayers, deletePlayer, statLines, setStatLines, leagueName, teamName, lunchboxUnitPrice, setLunchboxUnitPrice, onBack }) {
   const [gameStatsCardOpen, setGameStatsCardOpen] = useState(false);
   const [statsFormOpen, setStatsFormOpen] = useState(false);
   const [statsDraft, setStatsDraft] = useState({});
@@ -170,6 +170,17 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
   // assignments untouched - unlike Start game, which resets everything.
   function editCompletedGame() {
     setGame((prev) => ({ ...prev, gameStarted: true }));
+  }
+
+  // Backs out of editCompletedGame without touching any inning's lock state
+  // - isGameOver is derived purely from gameStarted (Section: game-over
+  // detection), so flipping it back is the exact inverse of editCompletedGame
+  // and needs nothing else reset. Otherwise, hitting Edit by mistake (or
+  // changing your mind before actually reopening anything) had no way back
+  // to the completed view short of reopening an inning and re-completing the
+  // game all the way through the Complete Inning flow again.
+  function cancelEditCompletedGame() {
+    setGame((prev) => ({ ...prev, gameStarted: false }));
   }
 
   function completeCurrentInning() {
@@ -398,7 +409,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
 
   const hasPlaytimeData = completedInnings.length > 0;
   const { participation, completedInningsSorted } = hasPlaytimeData
-    ? computeParticipation({ players, battingOrder, battingSlots, fieldingByInning, completedInnings })
+    ? computeParticipation({ players, fieldingByInning, completedInnings })
     : { participation: {}, completedInningsSorted: [] };
 
   // Starting lineup top-to-bottom, then subs by when they entered, then
@@ -653,13 +664,22 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
               <Lock size={14} /> Viewing Inning {activeInning} — {gameOver ? "game completed" : "completed"}
             </span>
             {!gameOver && (
-              <button
-                className="lb-btn"
-                onClick={() => reopenInning(activeInning)}
-                style={{ background: "transparent", border: `1px solid ${COLORS.inkSoft}`, borderRadius: 8, color: COLORS.inkSoft, fontWeight: 700, padding: "5px 10px", fontSize: 12 }}
-              >
-                Reopen to edit
-              </button>
+              <span style={{ display: "flex", gap: 8 }}>
+                <button
+                  className="lb-btn"
+                  onClick={cancelEditCompletedGame}
+                  style={{ background: "transparent", border: `1px solid ${COLORS.inkSoft}`, borderRadius: 8, color: COLORS.inkSoft, fontWeight: 700, padding: "5px 10px", fontSize: 12 }}
+                >
+                  Cancel edit
+                </button>
+                <button
+                  className="lb-btn"
+                  onClick={() => reopenInning(activeInning)}
+                  style={{ background: "transparent", border: `1px solid ${COLORS.inkSoft}`, borderRadius: 8, color: COLORS.inkSoft, fontWeight: 700, padding: "5px 10px", fontSize: 12 }}
+                >
+                  Reopen to edit
+                </button>
+              </span>
             )}
           </div>
         </div>
@@ -744,7 +764,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
           <section style={{ padding: "12px 16px 4px" }}>
             <div className="lb-diamond-wrap" style={{ background: COLORS.card, borderRadius: 16, padding: 12, border: `1px solid ${COLORS.border}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>On the field</h2>
+                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>On the Field</h2>
                 <span style={{ fontSize: 12, color: COLORS.muted, fontWeight: 600 }}>
                   {filledCount}/{10 + epCount} filled
                 </span>
@@ -868,7 +888,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
                           <text x={pos.x} y={pos.y - 3} textAnchor="middle" fontSize="13" fontWeight="800" fill={COLORS.chalk}>
                             {initials(occupant.name)}
                           </text>
-                          <text x={pos.x} y={pos.y + 12} textAnchor="middle" fontSize="9" fontWeight="600" fill={COLORS.gold}>
+                          <text x={pos.x} y={pos.y + 14} textAnchor="middle" fontSize="13" fontWeight="900" fill={COLORS.gold}>
                             #{occupant.jerseyNumber || "–"}
                           </text>
                         </>
@@ -907,7 +927,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
               {unfieldedPlayers.length === 0 ? (
                 <div style={{ fontSize: 13, color: COLORS.muted }}>Everyone in the lineup is on the field.</div>
               ) : (
-                <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+                <div className="lb-chip-grid">
                   {unfieldedPlayers.map((p) => (
                     <PlayerChip
                       key={p.id}
@@ -926,8 +946,8 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
             {/* Fielded players (including EP), tap to pick back up */}
             {filledCount > 0 && (
               <div style={{ marginTop: 10 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.inkSoft, marginBottom: 6 }}>On the field — tap to move or bench</div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.inkSoft, marginBottom: 6 }}>On the Field — tap to move or bench</div>
+                <div className="lb-chip-grid">
                   {allSlots
                     .filter((pos) => fielding[pos.id])
                     .map((pos) => {
@@ -941,36 +961,61 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
                           key={posId}
                           style={{
                             display: "flex",
-                            alignItems: "center",
-                            gap: 6,
+                            flexDirection: "column",
+                            gap: 2,
+                            width: "100%",
                             background: startedAsEP ? COLORS.epBluePale : COLORS.card,
                             border: `1px solid ${startedAsEP ? COLORS.epBlueBorder : COLORS.border}`,
-                            borderRadius: 999,
-                            padding: "5px 6px 5px 10px",
+                            borderRadius: 10,
+                            padding: "6px 8px",
                           }}
                         >
-                          <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.goldDeep }}>{posId}</span>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4 }}>
+                            <span
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: COLORS.goldDeep,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                minWidth: 0,
+                              }}
+                            >
+                              {posId} <span style={{ color: COLORS.muted }}>#{p.jerseyNumber || "–"}</span>
+                            </span>
+                            {!activeInningLocked && (
+                              <button
+                                className="lb-btn"
+                                onClick={() => benchFromField(playerId)}
+                                aria-label={`Bench ${p.name}`}
+                                style={{ background: "transparent", color: COLORS.muted, padding: 2, display: "flex", flexShrink: 0 }}
+                              >
+                                <X size={13} />
+                              </button>
+                            )}
+                          </div>
                           <button
                             className="lb-btn"
                             onClick={() => togglePickup(playerId)}
                             disabled={activeInningLocked}
                             style={{
+                              width: "100%",
+                              textAlign: "left",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
                               background: pickedUp === playerId ? COLORS.gold : "transparent",
-                              borderRadius: 999,
-                              padding: "3px 8px",
+                              borderRadius: 6,
+                              padding: "2px 4px",
                               fontSize: 13,
                               fontWeight: 600,
                               color: COLORS.ink,
                               opacity: activeInningLocked ? 0.55 : 1,
                             }}
                           >
-                            {p.name} <span style={{ color: COLORS.goldDeep }}>#{p.jerseyNumber || "–"}</span>
+                            {p.name}
                           </button>
-                          {!activeInningLocked && (
-                            <button className="lb-btn" onClick={() => benchFromField(playerId)} aria-label={`Bench ${p.name}`} style={{ background: "transparent", color: COLORS.muted, padding: 4, display: "flex" }}>
-                              <X size={14} />
-                            </button>
-                          )}
                         </div>
                       );
                     })}
@@ -981,9 +1026,9 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
         </div>
 
         <div className="lb-sidebar">
-          {/* Batting order */}
+          {/* Batting Order */}
           <section style={{ padding: "12px 16px 4px" }}>
-            <CollapsibleCard title="Batting order" subtitle={`${battingOrder.length} of ${battingOrderSize}`} subtitleWarn={!orderCountOk} open={orderOpen} onToggle={() => setOrderOpen((v) => !v)}>
+            <CollapsibleCard title="Batting Order" subtitle={`${battingOrder.length} of ${battingOrderSize}`} subtitleWarn={!orderCountOk} open={orderOpen} onToggle={() => setOrderOpen((v) => !v)}>
               {!orderCountOk && (
                 <div style={{ fontSize: 13, color: COLORS.danger, marginBottom: 8, fontWeight: 600 }}>
                   {battingOrder.length < battingOrderSize
@@ -1180,7 +1225,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
 
               <div style={{ marginTop: 16 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.inkSoft, marginBottom: 6 }}>
-                  Lineup size {gameStarted && <span style={{ color: COLORS.muted, fontWeight: 600 }}>— locked, game in progress</span>}
+                  Lineup Size {gameStarted && <span style={{ color: COLORS.muted, fontWeight: 600 }}>— locked, game in progress</span>}
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {[10, 11, 12, 13, 14].map((n) => {
@@ -1251,7 +1296,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
           {/* Playtime report */}
           <section style={{ padding: "12px 16px 4px" }}>
             <CollapsibleCard
-              title="Playtime report"
+              title="Playtime Report"
               subtitle={hasPlaytimeData ? `${completedInningsSorted.length} inning${completedInningsSorted.length === 1 ? "" : "s"}` : undefined}
               open={playtimeOpen}
               onToggle={() => setPlaytimeOpen((v) => !v)}
@@ -1268,23 +1313,20 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${COLORS.border}` }}>
                         <th style={{ textAlign: "left", padding: "6px 4px", color: COLORS.inkSoft }}>Player</th>
-                        <th style={{ textAlign: "right", padding: "6px 4px", color: COLORS.inkSoft }}>Batted</th>
                         <th style={{ textAlign: "right", padding: "6px 4px", color: COLORS.inkSoft }}>Fielded</th>
                         <th style={{ textAlign: "right", padding: "6px 4px", color: COLORS.inkSoft }}>Sat out</th>
                       </tr>
                     </thead>
                     <tbody>
                       {playersInLineupOrder.map((p) => {
-                        const stats = participation[p.id] || { battedInnings: new Set(), fieldedInnings: new Set() };
-                        const batted = stats.battedInnings.size;
+                        const stats = participation[p.id] || { fieldedInnings: new Set() };
                         const fielded = stats.fieldedInnings.size;
-                        const satOut = Math.max(0, completedInningsSorted.length - batted);
+                        const satOut = Math.max(0, completedInningsSorted.length - fielded);
                         return (
                           <tr key={p.id} style={{ borderBottom: `1px solid ${COLORS.border}` }}>
                             <td style={{ padding: "6px 4px", fontWeight: 600, whiteSpace: "nowrap" }}>
                               {p.name} <span style={{ color: COLORS.muted, fontWeight: 700 }}>#{p.jerseyNumber || "–"}</span>
                             </td>
-                            <td style={{ padding: "6px 4px", textAlign: "right" }}>{batted}</td>
                             <td style={{ padding: "6px 4px", textAlign: "right" }}>{fielded}</td>
                             <td style={{ padding: "6px 4px", textAlign: "right", color: satOut > 0 ? COLORS.danger : COLORS.muted }}>{satOut}</td>
                           </tr>
@@ -1299,7 +1341,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
 
           {/* Game stats entry (Section 3.3/9) */}
           <section style={{ padding: "12px 16px 4px" }}>
-            <CollapsibleCard title="Game stats" subtitle={hasEnteredStatsForCurrentGame ? "Entered" : undefined} open={gameStatsCardOpen} onToggle={() => setGameStatsCardOpen((v) => !v)}>
+            <CollapsibleCard title="Game Stats" subtitle={hasEnteredStatsForCurrentGame ? "Entered" : undefined} open={gameStatsCardOpen} onToggle={() => setGameStatsCardOpen((v) => !v)}>
               {!gameOver ? (
                 <div style={{ fontSize: 13, color: COLORS.muted }}>Mark the game completed to enter stats for it.</div>
               ) : !statsFormOpen ? (
@@ -1370,7 +1412,15 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
 
           <GameScoresCard game={game} setGame={setGame} teamName={teamName} />
 
-          <RosterCard players={players} setPlayers={setPlayers} onDeletePlayer={handleDeletePlayer} teamName={teamName} />
+          <RosterCard
+            players={players}
+            setPlayers={setPlayers}
+            onDeletePlayer={handleDeletePlayer}
+            teamName={teamName}
+            leagueName={leagueName}
+            lunchboxUnitPrice={lunchboxUnitPrice}
+            setLunchboxUnitPrice={setLunchboxUnitPrice}
+          />
         </div>
       </div>
 

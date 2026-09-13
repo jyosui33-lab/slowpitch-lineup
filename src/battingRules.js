@@ -159,50 +159,51 @@ export function getSlotBadge(battingSlots, slotIndex, playerId, reEntryPolicy, a
   return { label: `Re-entered (${count}${denominator})`, tone: REENTRY_TONE };
 }
 
-// Derives per-player batted/fielded innings from data that already exists:
-// fieldingByInning (per-inning fielding charts) for "fielded", and
-// battingSlots' history (via occupantAtInning) for "batted". Only innings
-// actually marked completed count - an inning that's merely open (tapped
-// into but not yet finished) hasn't happened yet from a playtime-accounting
-// standpoint, so it shouldn't count toward anyone's batted/fielded/sat-out
-// totals until the coach explicitly completes it.
-export function computeParticipation({ players, battingOrder, battingSlots, fieldingByInning, completedInnings }) {
+// Derives per-player fielded/EP innings from fieldingByInning (the per-inning
+// fielding charts). "Fielded" means an actual defensive position - EP1-EP4
+// are batting-only spots, so a player tapped onto one is tracked separately
+// (epInnings) rather than counted as fielded. EP appearances still matter to
+// computeSeasonPlaytime's gamesPlayed (a player who was EP all game clearly
+// played, just not on defense), which is why they're kept rather than
+// dropped outright. "Sat out" (computed by callers as completed innings
+// minus fielded) therefore includes both true bench innings and EP-only
+// innings - EP isn't fielding. Only innings actually marked completed count
+// - an inning that's merely open (tapped into but not yet finished) hasn't
+// happened yet from a playtime-accounting standpoint.
+export function computeParticipation({ players, fieldingByInning, completedInnings }) {
   const participation = {};
   for (const p of players) {
-    participation[p.id] = { battedInnings: new Set(), fieldedInnings: new Set() };
+    participation[p.id] = { fieldedInnings: new Set(), epInnings: new Set() };
   }
 
   const completedInningsSorted = [...completedInnings].sort((a, b) => a - b);
 
   for (const inning of completedInningsSorted) {
     const chart = fieldingByInning[inning] || {};
-    for (const playerId of Object.values(chart)) {
-      if (participation[playerId]) participation[playerId].fieldedInnings.add(inning);
+    for (const [posId, playerId] of Object.entries(chart)) {
+      const bucket = participation[playerId];
+      if (!bucket) continue;
+      if (posId.startsWith("EP")) bucket.epInnings.add(inning);
+      else bucket.fieldedInnings.add(inning);
     }
-
-    battingOrder.forEach((_, idx) => {
-      const slot = battingSlots[idx];
-      if (!slot) return;
-      const occupant = occupantAtInning(slot, inning);
-      if (occupant && participation[occupant]) {
-        participation[occupant].battedInnings.add(inning);
-      }
-    });
   }
 
   return { participation, completedInningsSorted };
 }
 
-// Season-wide rollup of the same batted/fielded/sat-out accounting, summed
-// across every game in the league rather than one game's innings. Reuses
+// Season-wide rollup of the same fielded/sat-out accounting, summed across
+// every game in the league rather than one game's innings. Reuses
 // computeParticipation per game rather than re-deriving it, so the two never
 // drift apart. satOutInnings mirrors the per-game formula (innings actually
-// completed, league-wide, minus innings batted) extended additively across
-// games - same semantics as the single-game Playtime report, just summed.
+// completed, league-wide, minus innings fielded) extended additively across
+// games - same semantics as the single-game Playtime report, just summed. A
+// game counts toward gamesPlayed if the player fielded a real position OR
+// played EP at least once - either one means they were actually in that
+// game, even though only the former counts as "fielded" time.
 export function computeSeasonPlaytime(games, players) {
   const byPlayer = {};
   for (const p of players) {
-    byPlayer[p.id] = { battedInnings: 0, fieldedInnings: 0, gamesPlayed: 0, games: [] };
+    byPlayer[p.id] = { fieldedInnings: 0, gamesPlayed: 0, games: [] };
   }
 
   let totalInningsCompleted = 0;
@@ -215,8 +216,6 @@ export function computeSeasonPlaytime(games, players) {
 
     const { participation, completedInningsSorted } = computeParticipation({
       players,
-      battingOrder: game.battingOrder,
-      battingSlots: game.battingSlots,
       fieldingByInning: game.fieldingByInning,
       completedInnings,
     });
@@ -225,13 +224,13 @@ export function computeSeasonPlaytime(games, players) {
 
     for (const p of players) {
       const stats = participation[p.id];
-      const batted = stats ? stats.battedInnings.size : 0;
       const fielded = stats ? stats.fieldedInnings.size : 0;
+      const playedEP = stats ? stats.epInnings.size > 0 : false;
+      const satOut = Math.max(0, inningsThisGame - fielded);
       const entry = byPlayer[p.id];
-      entry.battedInnings += batted;
       entry.fieldedInnings += fielded;
-      if (batted > 0 || fielded > 0) entry.gamesPlayed += 1;
-      entry.games.push({ gameId: game.id, date: game.date, opponent: game.opponent, batted, fielded, innings: inningsThisGame });
+      if (fielded > 0 || playedEP) entry.gamesPlayed += 1;
+      entry.games.push({ gameId: game.id, date: game.date, opponent: game.opponent, fielded, satOut, innings: inningsThisGame });
     }
   }
 
@@ -240,9 +239,8 @@ export function computeSeasonPlaytime(games, players) {
     return {
       playerId: p.id,
       gamesPlayed: entry.gamesPlayed,
-      battedInnings: entry.battedInnings,
       fieldedInnings: entry.fieldedInnings,
-      satOutInnings: Math.max(0, totalInningsCompleted - entry.battedInnings),
+      satOutInnings: Math.max(0, totalInningsCompleted - entry.fieldedInnings),
       games: entry.games,
     };
   });

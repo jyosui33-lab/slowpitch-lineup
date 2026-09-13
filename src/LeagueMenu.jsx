@@ -122,7 +122,7 @@ export default function LeagueMenu({ leagues, setLeagues, onOpenLeague }) {
       <section className="lb-page-inner" style={{ padding: "12px 16px 4px" }}>
         <div style={{ background: COLORS.card, borderRadius: 16, border: `1px solid ${COLORS.border}`, padding: 14 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Your leagues</h2>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Your Leagues</h2>
             {!formOpen && (
               <button
                 type="button"

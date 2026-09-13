@@ -32,6 +32,17 @@ export default function App() {
            default; at laptop widths this switches to a two-column layout
            via a CSS breakpoint, not JavaScript device detection. */
         .lb-layout { display: block; }
+
+        /* Bench / on-field player chips: two columns on phone width, three
+           once the sidebar splits off at laptop width below. Declared
+           before the @media block so its 1024px override wins the cascade
+           at that breakpoint instead of being shadowed by this base rule. */
+        .lb-chip-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+        }
+
         @media (min-width: 1024px) {
           .lb-layout {
             display: grid;
@@ -49,6 +60,9 @@ export default function App() {
           .lb-diamond-wrap {
             max-width: 520px;
             margin: 0 auto;
+          }
+          .lb-chip-grid {
+            grid-template-columns: repeat(3, 1fr);
           }
         }
 

@@ -68,6 +68,7 @@ export function defaultLeagueData() {
     statLines: [],
     games: [],
     activeGameId: null,
+    lunchboxUnitPrice: "", // shared price per lunchbox order, used to compute each player's Total Due
   };
 }
 

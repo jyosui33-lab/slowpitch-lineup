@@ -27,10 +27,17 @@ export default function LeagueWorkspace({ league, onRenameLeague, onDeleteLeague
     writeLeagueData(league.id, leagueData);
   }, [league.id, leagueData]);
 
-  const { roster: players, defaultLeagueSettings, statLines, games, activeGameId } = leagueData;
+  const { roster: players, defaultLeagueSettings, statLines, games, activeGameId, lunchboxUnitPrice } = leagueData;
 
   function setPlayers(updater) {
     setLeagueData((prev) => ({ ...prev, roster: typeof updater === "function" ? updater(prev.roster) : updater }));
+  }
+
+  function setLunchboxUnitPrice(updater) {
+    setLeagueData((prev) => ({
+      ...prev,
+      lunchboxUnitPrice: typeof updater === "function" ? updater(prev.lunchboxUnitPrice) : updater,
+    }));
   }
 
   function setStatLines(updater) {
@@ -97,6 +104,8 @@ export default function LeagueWorkspace({ league, onRenameLeague, onDeleteLeague
         setStatLines={setStatLines}
         leagueName={league.name}
         teamName={league.teamName}
+        lunchboxUnitPrice={lunchboxUnitPrice}
+        setLunchboxUnitPrice={setLunchboxUnitPrice}
         onBack={() => setActiveGameId(null)}
       />
     );
@@ -172,7 +181,16 @@ export default function LeagueWorkspace({ league, onRenameLeague, onDeleteLeague
         </div>
       )}
 
-      <RosterCard players={players} setPlayers={setPlayers} onDeletePlayer={deletePlayer} defaultOpen={players.length === 0} teamName={league.teamName} />
+      <RosterCard
+        players={players}
+        setPlayers={setPlayers}
+        onDeletePlayer={deletePlayer}
+        defaultOpen={players.length === 0}
+        teamName={league.teamName}
+        leagueName={league.name}
+        lunchboxUnitPrice={lunchboxUnitPrice}
+        setLunchboxUnitPrice={setLunchboxUnitPrice}
+      />
       <GamesList games={games} onCreate={createGame} onOpen={setActiveGameId} onDelete={deleteGame} teamName={league.teamName} />
       <SeasonPlaytimeCard games={games} players={players} />
       <SeasonStatsCard statLines={statLines} players={players} />
