@@ -1,12 +1,14 @@
 // Registration Management panel, nested inside RosterCard's Team Roster
 // card (league level). Tracks season-registration bookkeeping that's
 // separate from gameplay roster data (name/jersey/eligible positions):
-// lunchbox/snack-duty order, team fee, and payment status - plus a
-// generated PDF report combining any of those with the existing gameplay
-// fields (print.js's downloadLineupPdf, same off-screen-capture approach as
-// PrintableLineupCard). Total Due = Team Fee + (Lunchbox Order x the shared
-// lunchbox unit price entered here) - there's no separate amount-paid
-// tracking. Payment Status is a manual Paid/Unpaid toggle set here.
+// lunchbox/snack-duty order, team fee, ball/equipment fee, and payment
+// status - plus a generated PDF report combining any of those with the
+// existing gameplay fields (print.js's downloadLineupPdf, same off-screen-
+// capture approach as PrintableLineupCard). Total Fees = Team Fee + Ball/
+// Equipment Fee + (Lunchbox Order x the shared lunchbox unit price entered
+// here) - there's no separate amount-paid tracking. Payment Status is a
+// manual Paid/Unpaid toggle set here. Notes is a free-text per-player remark
+// field, also available as a report column.
 
 import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -14,10 +16,11 @@ import { COLORS, initials } from "./constants";
 import { downloadLineupPdf } from "./print";
 import RegistrationReportCard from "./RegistrationReportCard";
 
-function computeTotalDue(player, unitPrice) {
+function computeTotalFees(player, unitPrice) {
   const fee = Number(player.teamFee) || 0;
+  const equipmentFee = Number(player.ballEquipmentFee) || 0;
   const lunchboxQty = Number(player.lunchboxOrder) || 0;
-  return fee + lunchboxQty * unitPrice;
+  return fee + equipmentFee + lunchboxQty * unitPrice;
 }
 
 function formatCurrency(n) {
@@ -29,8 +32,10 @@ const REPORT_COLUMNS = [
   { key: "position", label: "Show Eligible Position", header: "Eligible Position", value: (p) => p.eligiblePositions?.join(", ") || "–" },
   { key: "lunchbox", label: "Show Lunchbox Order", header: "Lunchbox Order", value: (p) => p.lunchboxOrder || "–" },
   { key: "fee", label: "Show Team Fee", header: "Team Fee", value: (p) => formatCurrency(Number(p.teamFee) || 0) },
-  { key: "totalDue", label: "Show Total Due", header: "Total Due", value: (p, unitPrice) => formatCurrency(computeTotalDue(p, unitPrice)) },
+  { key: "ballEquipmentFee", label: "Show Ball/Equipment Fee", header: "Ball/Equipment Fee", value: (p) => formatCurrency(Number(p.ballEquipmentFee) || 0) },
+  { key: "totalFees", label: "Show Total Fees", header: "Total Fees", value: (p, unitPrice) => formatCurrency(computeTotalFees(p, unitPrice)) },
   { key: "paymentStatus", label: "Show Payment Status", header: "Payment Status", value: (p) => (p.paymentStatus === "paid" ? "Paid" : "Unpaid") },
+  { key: "note", label: "Show Notes", header: "Note", value: (p) => p.note || "–", align: "left", wrapText: true },
 ];
 
 function sectionTitleStyle() {
@@ -127,6 +132,37 @@ function NumberEntrySection({ title, players, field, onChange, prefix, step }) {
   );
 }
 
+const textInputStyle = {
+  flex: 1,
+  padding: "6px 8px",
+  borderRadius: 8,
+  border: `1px solid ${COLORS.border}`,
+  fontSize: 13,
+  fontWeight: 500,
+  minWidth: 0,
+};
+
+function NoteSection({ players, onChange }) {
+  return (
+    <div>
+      <div style={sectionTitleStyle()}>Notes</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {players.map((p) => (
+          <PlayerRow key={p.id} player={p}>
+            <input
+              type="text"
+              value={p.note ?? ""}
+              onChange={(e) => onChange(p.id, "note", e.target.value)}
+              placeholder="Add a note…"
+              style={textInputStyle}
+            />
+          </PlayerRow>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PaymentStatusSection({ players, onToggle }) {
   return (
     <div>
@@ -182,7 +218,7 @@ export default function RegistrationManagement({ players, setPlayers, leagueName
   }
 
   const activeCols = REPORT_COLUMNS.filter((c) => cols[c.key]).map((c) => ({ ...c, value: (p) => c.value(p, unitPrice) }));
-  const showUnitPriceNote = cols.lunchbox || cols.totalDue;
+  const showUnitPriceNote = cols.lunchbox || cols.totalFees;
 
   async function handleGenerateReport() {
     if (pdfBusy) return;
@@ -293,7 +329,9 @@ export default function RegistrationManagement({ players, setPlayers, leagueName
       </div>
 
       <NumberEntrySection title="Team Fee" players={players} field="teamFee" onChange={updateField} prefix="$" step="0.01" />
+      <NumberEntrySection title="Ball/Equipment Fee" players={players} field="ballEquipmentFee" onChange={updateField} prefix="$" step="0.01" />
       <PaymentStatusSection players={players} onToggle={togglePaid} />
+      <NoteSection players={players} onChange={updateField} />
 
       {createPortal(
         <div className="capture-only-card">

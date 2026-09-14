@@ -1,6 +1,6 @@
 // The printable Registration Management report: a plain table capturing
 // whichever columns the coach checked (jersey/position/lunchbox/fee/total
-// due/payment status), exported as a PDF via print.js's downloadLineupPdf
+// fees/payment status/note), exported as a PDF via print.js's downloadLineupPdf
 // (same off-screen-capture approach as PrintableLineupCard). Kept off-screen
 // by the .capture-only-card CSS rule in App.jsx - this report has no
 // on-screen table of its own, only the PDF.
@@ -30,7 +30,7 @@ const RegistrationReportCard = forwardRef(function RegistrationReportCard(
           <tr>
             <th style={th}>Player</th>
             {columns.map((c) => (
-              <th key={c.key} style={{ ...th, textAlign: "right" }}>
+              <th key={c.key} style={{ ...th, textAlign: c.align || "right", whiteSpace: c.wrapText ? "normal" : "nowrap" }}>
                 {c.header}
               </th>
             ))}
@@ -41,7 +41,7 @@ const RegistrationReportCard = forwardRef(function RegistrationReportCard(
             <tr key={p.id}>
               <td style={td}>{p.name}</td>
               {columns.map((c) => (
-                <td key={c.key} style={{ ...td, textAlign: "right" }}>
+                <td key={c.key} style={{ ...td, textAlign: c.align || "right", whiteSpace: c.wrapText ? "normal" : "nowrap" }}>
                   {c.value(p)}
                 </td>
               ))}
