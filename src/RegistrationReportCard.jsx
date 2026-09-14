@@ -30,7 +30,14 @@ const RegistrationReportCard = forwardRef(function RegistrationReportCard(
           <tr>
             <th style={th}>Player</th>
             {columns.map((c) => (
-              <th key={c.key} style={{ ...th, textAlign: c.align || "right", whiteSpace: c.wrapText ? "normal" : "nowrap" }}>
+              <th
+                key={c.key}
+                style={{
+                  ...th,
+                  textAlign: c.align || "right",
+                  whiteSpace: c.header.includes("\n") ? "pre-line" : c.wrapText ? "normal" : "nowrap",
+                }}
+              >
                 {c.header}
               </th>
             ))}

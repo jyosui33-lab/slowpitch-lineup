@@ -68,7 +68,7 @@ export function defaultLeagueData() {
     statLines: [],
     games: [],
     activeGameId: null,
-    lunchboxUnitPrice: "", // shared price per lunchbox order, used with team fee and ball/equipment fee to compute each player's Total Fees
+    lunchboxUnitPrice: "", // shared price per lunchbox order, used with team fee and ball/misc fee to compute each player's Total Fees
   };
 }
 
