@@ -28,12 +28,12 @@ function formatCurrency(n) {
 }
 
 const REPORT_COLUMNS = [
-  { key: "jersey", label: "Show Jersey Number", header: "Jersey #", value: (p) => p.jerseyNumber || "–" },
+  { key: "jersey", label: "Show Jersey Number", header: "Jersey #", value: (p) => p.jerseyNumber || "–", numeric: true },
   { key: "position", label: "Show Eligible Position", header: "Eligible Position", value: (p) => p.eligiblePositions?.join(", ") || "–" },
-  { key: "lunchbox", label: "Show Lunchbox Order", header: "Lunchbox\nOrder", value: (p) => p.lunchboxOrder || "–" },
-  { key: "fee", label: "Show Team Fee", header: "Team Fee", value: (p) => formatCurrency(Number(p.teamFee) || 0) },
-  { key: "ballMiscFee", label: "Show Ball/Misc Fee", header: "Ball/Misc\nFee", value: (p) => formatCurrency(Number(p.ballMiscFee) || 0) },
-  { key: "totalFees", label: "Show Total Fees", header: "Total Fees", value: (p, unitPrice) => formatCurrency(computeTotalFees(p, unitPrice)) },
+  { key: "lunchbox", label: "Show Lunchbox Order", header: "Lunchbox\nOrder", value: (p) => p.lunchboxOrder || "–", numeric: true },
+  { key: "fee", label: "Show Team Fee", header: "Team Fee", value: (p) => formatCurrency(Number(p.teamFee) || 0), numeric: true },
+  { key: "ballMiscFee", label: "Show Ball/Misc Fee", header: "Ball/Misc\nFee", value: (p) => formatCurrency(Number(p.ballMiscFee) || 0), numeric: true },
+  { key: "totalFees", label: "Show Total Fees", header: "Total Fees", value: (p, unitPrice) => formatCurrency(computeTotalFees(p, unitPrice)), numeric: true },
   { key: "paymentStatus", label: "Show Payment Status", header: "Payment Status", value: (p) => (p.paymentStatus === "paid" ? "Paid" : "Unpaid") },
   { key: "note", label: "Show Notes", header: "Note", value: (p) => p.note || "–", align: "left", wrapText: true },
 ];

@@ -8,6 +8,9 @@ import { forwardRef } from "react";
 
 const th = { textAlign: "left", padding: "6px 8px", borderBottom: "2px solid #111", fontSize: 12, whiteSpace: "nowrap" };
 const td = { padding: "6px 8px", borderBottom: "1px solid #ccc", fontSize: 12, whiteSpace: "nowrap" };
+// Figures (jersey #, lunchbox qty, fee amounts) render in Arial rather than
+// the card's Georgia body font - numerals read cleaner in a sans-serif face.
+const numFont = { fontFamily: "Arial, Helvetica, sans-serif" };
 
 const RegistrationReportCard = forwardRef(function RegistrationReportCard(
   { players, columns, leagueName, teamName, unitPrice, showUnitPriceNote },
@@ -21,7 +24,9 @@ const RegistrationReportCard = forwardRef(function RegistrationReportCard(
           <div style={{ fontSize: 14, color: "#333" }}>{teamName ? `${teamName} — Registration Report` : "Registration Report"}</div>
         </div>
         {showUnitPriceNote && (
-          <div style={{ fontSize: 11, color: "#666", textAlign: "right" }}>Lunchbox unit price: ${Number(unitPrice || 0).toFixed(2)}</div>
+          <div style={{ fontSize: 11, color: "#666", textAlign: "right" }}>
+            Lunchbox unit price: <span style={numFont}>${Number(unitPrice || 0).toFixed(2)}</span>
+          </div>
         )}
       </div>
 
@@ -48,7 +53,15 @@ const RegistrationReportCard = forwardRef(function RegistrationReportCard(
             <tr key={p.id}>
               <td style={td}>{p.name}</td>
               {columns.map((c) => (
-                <td key={c.key} style={{ ...td, textAlign: c.align || "right", whiteSpace: c.wrapText ? "normal" : "nowrap" }}>
+                <td
+                  key={c.key}
+                  style={{
+                    ...td,
+                    textAlign: c.align || "right",
+                    whiteSpace: c.wrapText ? "normal" : "nowrap",
+                    ...(c.numeric ? numFont : null),
+                  }}
+                >
                   {c.value(p)}
                 </td>
               ))}

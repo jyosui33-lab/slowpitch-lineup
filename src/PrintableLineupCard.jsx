@@ -10,6 +10,9 @@ import { POSITIONS, EP_SLOTS, gameLabel, isGameOver } from "./constants";
 
 const th = { textAlign: "left", padding: "4px 8px", borderBottom: "2px solid #111", fontSize: 11, whiteSpace: "nowrap" };
 const td = { padding: "4px 8px", borderBottom: "1px solid #ccc", fontSize: 12 };
+// Figures (batting order #, jersey #, fielded/sat-out counts) render in
+// Arial rather than the card's Georgia body font.
+const numFont = { fontFamily: "Arial, Helvetica, sans-serif" };
 
 const PrintableLineupCard = forwardRef(function PrintableLineupCard({ game, players, leagueName, teamName }, ref) {
   const { battingOrder, battingOrderSize, battingSlots, fieldingByInning, completedInnings, leagueSettings, gameStarted, startingAssignments, activeInning } = game;
@@ -70,9 +73,9 @@ const PrintableLineupCard = forwardRef(function PrintableLineupCard({ game, play
               const badge = getSlotBadge(battingSlots, i, pid, leagueSettings.reEntryPolicy, undefined, starterName);
               return (
                 <tr key={pid}>
-                  <td style={td}>{i + 1}</td>
+                  <td style={{ ...td, ...numFont }}>{i + 1}</td>
                   <td style={td}>{p.name}</td>
-                  <td style={td}>#{p.jerseyNumber || "–"}</td>
+                  <td style={{ ...td, ...numFont }}>#{p.jerseyNumber || "–"}</td>
                   <td style={td}>{gameStarted || gameOver ? startingAssignments[pid] || "Bench" : "—"}</td>
                   <td style={td}>{currentPositionLabel(pid)}</td>
                   <td style={td}>{badge ? badge.label : "—"}</td>
@@ -106,7 +109,13 @@ const PrintableLineupCard = forwardRef(function PrintableLineupCard({ game, play
                     const occ = playerById(chart[pos.id]);
                     return (
                       <td key={n} style={{ ...td, textAlign: "center" }}>
-                        {occ ? `${occ.name} #${occ.jerseyNumber || "–"}` : "—"}
+                        {occ ? (
+                          <>
+                            {occ.name} <span style={numFont}>#{occ.jerseyNumber || "–"}</span>
+                          </>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                     );
                   })}
@@ -136,10 +145,10 @@ const PrintableLineupCard = forwardRef(function PrintableLineupCard({ game, play
                 return (
                   <tr key={p.id}>
                     <td style={td}>
-                      {p.name} #{p.jerseyNumber || "–"}
+                      {p.name} <span style={numFont}>#{p.jerseyNumber || "–"}</span>
                     </td>
-                    <td style={{ ...td, textAlign: "right" }}>{fielded}</td>
-                    <td style={{ ...td, textAlign: "right" }}>{satOut}</td>
+                    <td style={{ ...td, textAlign: "right", ...numFont }}>{fielded}</td>
+                    <td style={{ ...td, textAlign: "right", ...numFont }}>{satOut}</td>
                   </tr>
                 );
               })}
