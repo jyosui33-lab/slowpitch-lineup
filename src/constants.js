@@ -105,14 +105,16 @@ export function formatTime(timeStr) {
 }
 
 // teamName is optional: leagues created before team names existed simply
-// read "vs. Riverside" as they always did.
+// read "vs. Riverside" as they always did. homeAway is optional too -
+// games created before Decision 66 (home/away) have neither, so no tag shows.
 export function gameLabel(game, teamName) {
   const opp = game.opponent?.trim() || "TBD";
   const us = teamName?.trim();
   const datePart = formatDate(game.date);
   const timePart = formatTime(game.time);
+  const homeAwayTag = game.homeAway === "home" ? " (Home)" : game.homeAway === "away" ? " (Away)" : "";
   const matchup = us ? `${us} vs. ${opp}` : `vs. ${opp}`;
-  return `${matchup}${datePart ? ` — ${datePart}` : ""}${timePart ? ` ${timePart}` : ""}`;
+  return `${matchup}${homeAwayTag}${datePart ? ` — ${datePart}` : ""}${timePart ? ` ${timePart}` : ""}`;
 }
 
 export function isGameOver(game) {

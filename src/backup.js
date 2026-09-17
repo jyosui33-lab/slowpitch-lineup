@@ -23,6 +23,7 @@ const GAME_FIELDS = [
   { key: "opponent", defaultValue: "", validate: (v) => typeof v === "string" },
   { key: "date", defaultValue: "", validate: (v) => typeof v === "string" },
   { key: "time", defaultValue: "", validate: (v) => typeof v === "string" },
+  { key: "homeAway", defaultValue: "home", validate: (v) => v === "home" || v === "away" },
   { key: "createdAt", defaultValue: "", validate: (v) => typeof v === "string" },
   { key: "updatedAt", defaultValue: "", validate: (v) => typeof v === "string" },
   { key: "leagueSettings", defaultValue: { reEntryPolicy: "once" }, validate: isPlainObject },

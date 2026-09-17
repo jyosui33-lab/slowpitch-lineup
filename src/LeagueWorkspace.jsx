@@ -69,8 +69,8 @@ export default function LeagueWorkspace({ league, onRenameLeague, onDeleteLeague
     }));
   }
 
-  function createGame({ opponent, date, time }) {
-    const game = defaultGame({ opponent, date, time, leagueSettings: defaultLeagueSettings });
+  function createGame({ opponent, date, time, homeAway }) {
+    const game = defaultGame({ opponent, date, time, homeAway, leagueSettings: defaultLeagueSettings });
     setLeagueData((prev) => ({ ...prev, games: [...prev.games, game], activeGameId: game.id }));
   }
 

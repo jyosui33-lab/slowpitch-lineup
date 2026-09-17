@@ -22,6 +22,7 @@ export default function GamesList({ games, onCreate, onOpen, onDelete, teamName 
   const [opponent, setOpponent] = useState("");
   const [date, setDate] = useState(today);
   const [time, setTime] = useState("");
+  const [homeAway, setHomeAway] = useState("home");
   const [error, setError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
@@ -31,10 +32,11 @@ export default function GamesList({ games, onCreate, onOpen, onDelete, teamName 
       setError("Enter an opponent.");
       return;
     }
-    onCreate({ opponent: opponent.trim(), date, time });
+    onCreate({ opponent: opponent.trim(), date, time, homeAway });
     setOpponent("");
     setTime("");
     setDate(today());
+    setHomeAway("home");
     setError("");
     setFormOpen(false);
   }
@@ -94,6 +96,34 @@ export default function GamesList({ games, onCreate, onOpen, onDelete, teamName 
                 onChange={(e) => setTime(e.target.value)}
                 style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: `1px solid ${COLORS.border}`, fontSize: 14 }}
               />
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {[
+                { value: "home", label: "Home" },
+                { value: "away", label: "Away" },
+              ].map(({ value, label }) => {
+                const active = homeAway === value;
+                return (
+                  <button
+                    type="button"
+                    key={value}
+                    className="lb-btn"
+                    onClick={() => setHomeAway(value)}
+                    style={{
+                      flex: 1,
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      border: `1px solid ${active ? COLORS.turf : COLORS.border}`,
+                      background: active ? COLORS.turf : "#fff",
+                      color: active ? "#fff" : COLORS.ink,
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
             {error && <div style={{ fontSize: 13, color: COLORS.danger, fontWeight: 600 }}>{error}</div>}
             <div style={{ display: "flex", gap: 8 }}>

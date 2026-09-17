@@ -136,19 +136,22 @@ const REENTRY_TONE = "reentered";
 const SUB_TONE = "sub";
 const STARTER_TONE = "starter";
 
-// Small status badge for a batting-order row: Starter / In for <name> /
+// Small status badge for a batting-order row: Starter / In for <name> #<jersey> /
 // Re-entered. Returns null before the game has started (no slot data yet to
 // show). Pass atInning when viewing a locked past inning so the re-entry
 // count reflects the game's state as of that inning, not the full-game
 // total. Pass starterName (the departed starter's display name) so the "Sub"
 // case reads as "already in the lineup for them" rather than "still on the
 // bench" - the two are easy to conflate since both involve the word "sub".
-export function getSlotBadge(battingSlots, slotIndex, playerId, reEntryPolicy, atInning = Infinity, starterName) {
+// Pass starterJersey alongside it so the chip can identify that starter by
+// number too, not just name.
+export function getSlotBadge(battingSlots, slotIndex, playerId, reEntryPolicy, atInning = Infinity, starterName, starterJersey) {
   const slot = battingSlots[slotIndex];
   if (!slot) return null;
 
   if (playerId !== slot.starterId) {
-    return { label: starterName ? `In for ${starterName}` : "Sub", tone: SUB_TONE };
+    const jerseyTag = starterName && starterJersey ? ` #${starterJersey}` : "";
+    return { label: starterName ? `In for ${starterName}${jerseyTag}` : "Sub", tone: SUB_TONE };
   }
 
   const count = reEntryCount(slot, atInning);

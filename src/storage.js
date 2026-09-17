@@ -87,13 +87,14 @@ export function deleteLeagueData(leagueId) {
 // A fresh Game object. leagueSettings is copied from the league's default at
 // creation time and is independently editable per game until it locks
 // (architecture doc Section 7 / Decision 28).
-export function defaultGame({ opponent = "", date = "", time = "", leagueSettings }) {
+export function defaultGame({ opponent = "", date = "", time = "", homeAway = "home", leagueSettings }) {
   const now = new Date().toISOString();
   return {
     id: uid(),
     opponent,
     date,
     time,
+    homeAway,
     createdAt: now,
     updatedAt: now,
     leagueSettings: { ...leagueSettings },

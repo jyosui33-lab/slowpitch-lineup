@@ -69,8 +69,8 @@ const PrintableLineupCard = forwardRef(function PrintableLineupCard({ game, play
             {battingOrder.map((pid, i) => {
               const p = playerById(pid);
               if (!p) return null;
-              const starterName = playerById(battingSlots[i]?.starterId)?.name;
-              const badge = getSlotBadge(battingSlots, i, pid, leagueSettings.reEntryPolicy, undefined, starterName);
+              const starterPlayer = playerById(battingSlots[i]?.starterId);
+              const badge = getSlotBadge(battingSlots, i, pid, leagueSettings.reEntryPolicy, undefined, starterPlayer?.name, starterPlayer?.jerseyNumber);
               return (
                 <tr key={pid}>
                   <td style={{ ...td, ...numFont }}>{i + 1}</td>

@@ -78,7 +78,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
     return () => observer.disconnect();
   }, []);
 
-  const { battingOrder, battingOrderSize, gameStarted, startingAssignments, battingSlots, activeInning, fieldingByInning, completedInnings, leagueSettings } = game;
+  const { battingOrder, battingOrderSize, gameStarted, startingAssignments, battingSlots, activeInning, fieldingByInning, completedInnings, leagueSettings, homeAway } = game;
   const fielding = fieldingByInning[activeInning] || {};
   const gameOver = isGameOver(game);
   const activeInningLocked = gameOver || completedInnings.includes(activeInning);
@@ -120,7 +120,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
       setPickError("");
       return;
     }
-    if (!gameOver && n === highestOpenedInning + 1) {
+    if (gameStarted && !gameOver && n === highestOpenedInning + 1) {
       setPendingAdvanceInning(n);
     }
   }
@@ -236,13 +236,39 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
   // and the confirmed path in confirmReentry.
   function applyPlacement(incomingId, posId, outIdx, isNewToOrder) {
     const outgoingBattingPlayerId = outIdx !== -1 ? battingOrder[outIdx] : null;
+    // Set inside the updater below when a reshuffle displaces someone who
+    // isn't eligible for the spot they'd need to swap into - picked back up
+    // automatically afterward (instead of left as an unselected bench chip)
+    // so the coach's very next tap places them, rather than hard-blocking
+    // the whole move.
+    let heldDisplacedId = null;
     setGame((prev) => {
       const currentFielding = { ...(prev.fieldingByInning[prev.activeInning] || {}) };
+
+      // Pure defensive reshuffle (incoming player is already in the batting
+      // order - not a substitution): if they're currently fielding a
+      // different spot and the target is held by someone else, swap the two
+      // instead of overwriting the target and silently dropping its
+      // occupant off the field with nowhere to go. A player picked up from
+      // the bench (no current spot of their own to offer) still just takes
+      // the target and bumps whoever was there - there's nothing to swap.
+      const incomingOldPos = Object.keys(currentFielding).find((pos) => currentFielding[pos] === incomingId);
+      const displacedId = currentFielding[posId];
+      const isReshuffle = !isNewToOrder && !!incomingOldPos && !!displacedId && displacedId !== incomingId;
+      let swapEligible = false;
+      if (isReshuffle) {
+        const oldPosIsEP = incomingOldPos.startsWith("EP");
+        const displacedPlayer = playerById(displacedId);
+        swapEligible = oldPosIsEP || !!displacedPlayer?.eligiblePositions.includes(incomingOldPos);
+        if (!swapEligible) heldDisplacedId = displacedId;
+      }
+
       for (const pos of Object.keys(currentFielding)) {
         if (currentFielding[pos] === incomingId) delete currentFielding[pos];
         if (outgoingBattingPlayerId && currentFielding[pos] === outgoingBattingPlayerId) delete currentFielding[pos];
       }
       currentFielding[posId] = incomingId;
+      if (isReshuffle && swapEligible) currentFielding[incomingOldPos] = displacedId;
       const nextFieldingByInning = { ...prev.fieldingByInning, [prev.activeInning]: currentFielding };
 
       let nextBattingOrder = prev.battingOrder;
@@ -261,7 +287,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
 
       return { ...prev, fieldingByInning: nextFieldingByInning, battingOrder: nextBattingOrder, battingSlots: nextBattingSlots };
     });
-    setPickedUp(null);
+    setPickedUp(heldDisplacedId);
     setPickError("");
   }
 
@@ -277,6 +303,12 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
       return;
     }
     const isNewToOrder = !battingOrder.includes(pickedUp);
+    // A pure defensive reshuffle (both players already in the batting
+    // order) that lands on an occupied spot swaps the two fielders rather
+    // than bumping the displaced one to the bench. If the displaced player
+    // isn't eligible for the incoming player's old spot, applyPlacement
+    // can't complete that swap - it leaves them unfielded and picks them
+    // back up automatically instead, so this doesn't need to block here.
     // A substitute who's already been subbed out is done for the game -
     // block them from fielding ANY position, not just one currently held by
     // someone in the batting order. Without this, tapping them onto a
@@ -405,6 +437,17 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
   function isStartingEP(playerId) {
     const label = startingPositionLabel(playerId);
     return !!label && label.startsWith("EP");
+  }
+
+  // Label for a bench-strip chip: which of the starting lineup (as snapshot
+  // at Start game, Decision 26) a benched player belongs to, rather than the
+  // uniform "Bench" every chip in this strip already reads as via its
+  // section header. A player present in startingAssignments was in the
+  // batting order when the game started; anyone else is a substitute who
+  // hasn't (yet) entered the game.
+  function benchLabel(playerId) {
+    if (!gameStarted) return "Bench";
+    return Object.prototype.hasOwnProperty.call(startingAssignments, playerId) ? "Starter" : "Sub";
   }
 
   const hasPlaytimeData = completedInnings.length > 0;
@@ -542,7 +585,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
           const isActive = n === activeInning;
           const isCompleted = completedInnings.includes(n);
           const isOpened = !!fieldingByInning[n];
-          const isReachable = isOpened || (!gameOver && n === highestOpenedInning + 1);
+          const isReachable = isOpened || (gameStarted && !gameOver && n === highestOpenedInning + 1);
           const hasChart = isOpened && Object.keys(fieldingByInning[n]).length > 0;
           return (
             <button
@@ -769,7 +812,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
                   {filledCount}/{10 + epCount} filled
                 </span>
               </div>
-              {activeInning === highestOpenedInning && !activeInningLocked && pendingAdvanceInning == null && !pendingReentry && (
+              {gameStarted && activeInning === highestOpenedInning && !activeInningLocked && pendingAdvanceInning == null && !pendingReentry && (
                 <div style={{ marginBottom: 8 }}>
                   <button
                     type="button"
@@ -934,7 +977,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
                       player={p}
                       picked={pickedUp === p.id}
                       onClick={() => togglePickup(p.id)}
-                      label="Bench"
+                      label={benchLabel(p.id)}
                       isStartingEP={isStartingEP(p.id)}
                       disabled={activeInningLocked}
                     />
@@ -1047,8 +1090,10 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
                   const startedAsEP = isStartingEP(p.id);
                   const badgeColor = startedAsEP ? COLORS.epBlue : posLabel === "Bench" ? COLORS.muted : currentIsEP ? COLORS.gold : COLORS.turf;
                   const displayLabel = startLabel && startLabel !== posLabel ? `${startLabel} → ${posLabel}` : posLabel;
-                  const starterName = playerById(battingSlots[i]?.starterId)?.name;
-                  const badge = getSlotBadge(battingSlots, i, p.id, leagueSettings.reEntryPolicy, activeInningLocked ? activeInning : undefined, starterName);
+                  const starterPlayer = playerById(battingSlots[i]?.starterId);
+                  const starterName = starterPlayer?.name;
+                  const starterJersey = starterPlayer?.jerseyNumber;
+                  const badge = getSlotBadge(battingSlots, i, p.id, leagueSettings.reEntryPolicy, activeInningLocked ? activeInning : undefined, starterName, starterJersey);
                   const badgeBg = badge?.tone === "reentered" ? COLORS.gold : badge?.tone === "sub" ? COLORS.clay : "transparent";
                   const badgeFg = badge?.tone === "starter" ? COLORS.muted : "#fff";
                   return (
@@ -1282,6 +1327,36 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
                           fontSize: 13,
                           fontWeight: 700,
                           opacity: gameStarted && !active ? 0.6 : 1,
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.inkSoft, marginBottom: 6 }}>Home / Away</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {[
+                    { value: "home", label: "Home" },
+                    { value: "away", label: "Away" },
+                  ].map(({ value, label }) => {
+                    const active = homeAway === value;
+                    return (
+                      <button
+                        type="button"
+                        key={value}
+                        className="lb-btn"
+                        onClick={() => setGame((prev) => ({ ...prev, homeAway: value }))}
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: 999,
+                          border: `1px solid ${active ? COLORS.turf : COLORS.border}`,
+                          background: active ? COLORS.turf : "#fff",
+                          color: active ? "#fff" : COLORS.ink,
+                          fontSize: 13,
+                          fontWeight: 700,
                         }}
                       >
                         {label}
