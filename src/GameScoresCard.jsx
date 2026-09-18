@@ -17,6 +17,17 @@ export default function GameScoresCard({ game, setGame, teamName }) {
   const usLabel = teamName?.trim() || "Us";
   const themLabel = game.opponent?.trim() || "Opponent";
 
+  // Real scoreboards list the visiting team on top, home team on the bottom
+  // (the home team bats last). game.homeAway is optional (games created
+  // before Decision 69 have none) - when it's unset, fall back to the
+  // original us-first order rather than guessing.
+  const usTag = game.homeAway === "home" ? " (Home)" : game.homeAway === "away" ? " (Away)" : "";
+  const themTag = game.homeAway === "home" ? " (Away)" : game.homeAway === "away" ? " (Home)" : "";
+  const scoreboardRows =
+    game.homeAway === "home"
+      ? [["them", themLabel + themTag], ["us", usLabel + usTag]]
+      : [["us", usLabel + usTag], ["them", themLabel + themTag]];
+
   function setRuns(side, inning, raw) {
     setGame((prev) => {
       const prevScores = prev.scores || emptyScores();
@@ -39,7 +50,7 @@ export default function GameScoresCard({ game, setGame, teamName }) {
 
   function row(side, label) {
     return (
-      <tr>
+      <tr key={side}>
         <th
           scope="row"
           style={{
@@ -133,10 +144,7 @@ export default function GameScoresCard({ game, setGame, teamName }) {
                 <th style={{ padding: "4px 10px 8px 8px", fontSize: 12, fontWeight: 800, color: COLORS.gold, textAlign: "center" }}>R</th>
               </tr>
             </thead>
-            <tbody>
-              {row("us", usLabel)}
-              {row("them", themLabel)}
-            </tbody>
+            <tbody>{scoreboardRows.map(([side, label]) => row(side, label))}</tbody>
           </table>
         </div>
 

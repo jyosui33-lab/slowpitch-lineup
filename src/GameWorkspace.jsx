@@ -381,6 +381,27 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
     applyPlacement(pickedUp, posId, outIdx, isNewToOrder);
   }
 
+  // Tapping a position marker directly on the diamond, rather than needing
+  // to scroll down to a chip to pick a player up first. Nothing picked up
+  // yet + an occupied marker -> pick that player up, same as tapping their
+  // on-field chip (an empty marker with nothing picked up does nothing -
+  // there's no one to place). Something already picked up -> same as
+  // before: tapping their own marker again deselects them (matching the
+  // chip's toggle behavior), tapping any other marker places/swaps them.
+  function handleMarkerTap(posId) {
+    if (activeInningLocked) return;
+    const occupantId = fielding[posId];
+    if (!pickedUp) {
+      if (occupantId) togglePickup(occupantId);
+      return;
+    }
+    if (occupantId === pickedUp) {
+      togglePickup(pickedUp);
+      return;
+    }
+    placeOn(posId);
+  }
+
   function confirmReentry() {
     if (!pendingReentry) return;
     const { incomingId, posId, outIdx } = pendingReentry;
@@ -919,7 +940,7 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
                     <g
                       key={pos.id}
                       className="lb-slot lb-btn"
-                      onClick={() => placeOn(pos.id)}
+                      onClick={() => handleMarkerTap(pos.id)}
                       role="button"
                       aria-label={`Position ${pos.id}${occupant ? `, ${occupant.name}` : ", empty"}`}
                       style={{ cursor: activeInningLocked ? "default" : pickedUp ? "pointer" : occupant ? "pointer" : "default" }}
