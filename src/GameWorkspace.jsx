@@ -32,7 +32,7 @@ import RosterCard from "./RosterCard";
 import GameScoresCard from "./GameScoresCard";
 import PrintableLineupCard from "./PrintableLineupCard";
 import StartingLineupCard from "./StartingLineupCard";
-import { downloadLineupPdf, downloadCardPdf } from "./print";
+import { downloadLineupPdf, shareLineupCardImage } from "./print";
 
 export default function GameWorkspace({ game, setGame, players, setPlayers, deletePlayer, statLines, setStatLines, leagueName, teamName, lunchboxUnitPrice, setLunchboxUnitPrice, onBack }) {
   const [gameStatsCardOpen, setGameStatsCardOpen] = useState(false);
@@ -531,8 +531,8 @@ export default function GameWorkspace({ game, setGame, players, setPlayers, dele
     if (shareCardBusy) return;
     setShareCardBusy(true);
     try {
-      const filename = `${gameLabel(game, teamName).replace(/[^\w.-]+/g, "_")}_starting_lineup.pdf`;
-      await downloadCardPdf(shareCardRef.current, filename);
+      const filename = `${gameLabel(game, teamName).replace(/[^\w.-]+/g, "_")}_starting_lineup.png`;
+      await shareLineupCardImage(shareCardRef.current, filename);
     } finally {
       setShareCardBusy(false);
     }

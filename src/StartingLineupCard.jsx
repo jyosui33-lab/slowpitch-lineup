@@ -1,6 +1,7 @@
 // The shareable starting-lineup card: a compact, group-chat-friendly image
-// (exported as a single-page PDF sized to fit it, via print.js's
-// downloadCardPdf) generated once a game starts. Styled after a stadium
+// (exported as a PNG via print.js's shareLineupCardImage, handed to the
+// native share sheet so it can be saved straight to Photos) generated once
+// a game starts. Styled after a stadium
 // "starting lineup" graphic - stacked two-tone title banner, alternating
 // gray rows with a slanted batting-order numeral. Deliberately separate
 // from PrintableLineupCard - that one is a multi-page coach's reference
